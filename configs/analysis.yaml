@@ -1,0 +1,90 @@
+# Analysis configuration for Staresina et al. 2015 reproduction
+# This file contains all parameters needed to reproduce the paper's findings
+
+# Data paths
+paths:
+  data_dir: "data/raw"
+  output_dir: "results"
+
+# Subject IDs to process (placeholder - update with actual IDs from dataset)
+subjects:
+  - "sub-01"
+  - "sub-02"
+  - "sub-03"
+
+# EEG channels to analyze
+# Staresina et al. focused on hippocampal recordings
+channels:
+  - "HPC_L"  # Left hippocampus
+  - "HPC_R"  # Right hippocampus
+
+# Sleep stages to analyze (NREM sleep)
+sleep_stages:
+  - 2  # N2
+  - 3  # N3
+
+# Preprocessing parameters
+preprocessing:
+  l_freq: 0.1      # High-pass filter cutoff (Hz)
+  h_freq: 200      # Low-pass filter cutoff (Hz)
+  notch_freq: 50   # Line noise frequency (Hz) - use 60 for US data
+
+# Event detection parameters
+# These thresholds are based on the Methods section of Staresina et al. 2015
+detection:
+  
+  # Slow oscillations (0.5-1.25 Hz)
+  slow_oscillations:
+    freq_range: [0.5, 1.25]
+    duration_range: [0.8, 2.0]  # seconds
+    amplitude_threshold: 1.25    # std deviations
+    
+  # Sleep spindles (9-16 Hz)
+  spindles:
+    freq_range: [9, 16]
+    duration_range: [0.5, 3.0]   # seconds
+    threshold: 1.5               # std deviations above mean envelope
+    
+  # Ripples (80-100 Hz in hippocampus)
+  ripples:
+    freq_range: [80, 100]
+    duration_range: [0.04, 0.2]  # seconds (40-200 ms)
+    threshold: 3.0               # std deviations
+
+# Time-frequency analysis parameters
+tfr:
+  freqs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100]
+  n_cycles: 7                     # Morlet wavelet cycles
+  time_window: [-2.0, 2.0]        # Time window around events (seconds)
+  baseline: [-2.0, -1.0]          # Baseline period for normalization
+
+# Phase-amplitude coupling parameters
+pac:
+  method: "modulation_index"      # or "mean_vector_length", "phase_locking_value"
+  phase_freqs: [0.5, 0.75, 1.0, 1.25]  # SO frequencies for phase
+  amp_freqs: [9, 10, 11, 12, 13, 14, 15, 16, 80, 85, 90, 95, 100]  # Spindle/ripple for amplitude
+  n_bins: 18                      # Phase bins for MI calculation
+
+# Statistical testing parameters
+stats:
+  n_permutations: 1000
+  alpha: 0.05
+  tail: "two-sided"
+  cluster_threshold: 0.05
+
+# Visualization parameters
+plots:
+  dpi: 300
+  figure_format: "png"
+  colormap: "viridis"
+  
+# Coupling analysis
+coupling:
+  # Time window to check for spindle occurrence relative to SO trough (ms)
+  spindle_so_window: [-500, 500]
+  
+  # Time window to check for ripple occurrence relative to spindle peak (ms)
+  ripple_spindle_window: [-250, 250]
+  
+  # Minimum number of events required for analysis
+  min_events: 20
