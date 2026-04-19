@@ -47,7 +47,7 @@ python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
-pip install -r requirements.txt
+pip install -e .  # Install package in editable mode with all dependencies
 ```
 
 ### 3. Download Data
@@ -55,19 +55,46 @@ The original Staresina 2015 data is not publicly available. We use the Ngo et al
 
 **Dataset**: [OSF - Ngo et al. 2020](https://osf.io/3hpvr/)
 
-Download and place data in `data/raw/`:
+**Automatic Data Organization**: Use the provided script to organize your downloaded data automatically:
+
+```bash
+# First, do a dry run to preview the organization
+python scripts/organize_data.py \
+    --source ~/Downloads/ngo_dataset \
+    --dest data/raw \
+    --dry-run
+
+# If the preview looks correct, run the actual organization
+python scripts/organize_data.py \
+    --source ~/Downloads/ngo_dataset \
+    --dest data/raw
+```
+
+This script will:
+- Scan all .mat files in your download directory (handles hundreds of files automatically)
+- Extract subject IDs from filenames using pattern matching
+- Organize files into `data/raw/sub-01/`, `data/raw/sub-02/`, etc.
+- Generate a detailed report in `data/raw/organization_report.txt`
+
+**Manual alternative** (not recommended for large datasets):
+
+If you prefer to organize files manually, create this structure:
+
 ```
 data/
 └── raw/
     ├── sub-01/
+    │   └── *.mat files for subject 1
     ├── sub-02/
+    │   └── *.mat files for subject 2
     └── ...
 ```
-
 ### 4. Run the Pipeline
 ```bash
 python scripts/run_pipeline.py
 ```
+
+**For detailed step-by-step instructions with explanations**, see [`examples/01_quickstart.md`](examples/01_quickstart.md).
 
 ---
 
@@ -89,9 +116,13 @@ staresina2015-sleep-oscillations-repro/
 │   └── analysis.yaml       # Analysis parameters
 ├── scripts/
 │   └── run_pipeline.py     # Convenience script
+    │   └─ organize_data.py       # Automatic data organization
 ├── tests/
 │   └── test_detect_events.py  # Unit tests
 ├── .github/workflows/
+├── examples/
+│   └─ 01_quickstart.md          # Step-by-step tutorial
+├── setup.py                          # Package installation
 │   └── ci.yml              # CI/CD configuration
 ├── requirements.txt
 └── README.md
