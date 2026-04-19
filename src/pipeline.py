@@ -23,7 +23,7 @@ import numpy as np
 import mne
 
 from .io import load_eeg_data
-from .preprocess import preprocess_eeg, extract_nrem_epochs
+from .preprocess import preprocess, extract_nrem_epochs
 from .detect_events import detect_slow_oscillations, detect_spindles, detect_ripples
 from .tfr import compute_morlet_tfr
 from .pac import compute_pac_comodulogram
