@@ -31,7 +31,6 @@ PRINCIPLE:
 """
 
 import numpy as np
-from scipy.signal import morlet2
 
 
 def morlet_power(signal: np.ndarray, fs: int,
