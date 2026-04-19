@@ -105,8 +105,8 @@ def extract_eeg_from_mat(mat_data: Dict, channel_name: Optional[str] = None) -> 
     # Try to find sampling rate
     for key in srate_keys:
         if key in mat_data:
-            sfreq = float(mat_data[key])
-            break
+                    val = mat_data[key]
+                    sfreq = float(np.asarray(val).item() if np.asarray(val).size == 1 else np.asarray(val).flat[0])            break
     
     if eeg_data is None:
         raise ValueError(f"Could not find EEG data. Available keys: {available_keys}")
