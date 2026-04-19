@@ -47,8 +47,20 @@ def load_mat_file(filepath: str) -> Dict:
         logger.info(f"Loaded .mat file: {filepath.name}")
         return data
     except Exception as e:
-        raise ValueError(f"Error loading .mat file {filepath}: {str(e)}")
-
+        # Try loading with h5py for MATLAB v7.3 files
+        try:
+            import h5py
+            logger.info(f"Trying h5py for v7.3 file: {filepath.name}")
+            with h5py.File(str(filepath), 'r') as f:
+                # Convert h5py file to dictionary
+                data = {}
+                for key in f.keys():
+                    data[key] = f[key][()]
+            logger.info(f"Successfully loaded .mat file with h5py: {filepath.name}")
+            return data
+        except ImportError:
+            logger.error("h5py not installed. Install it with: pip install h5py")
+            raise ValueError(f"Error loading .mat file {filepath}: {str(e)}. Install h5py for v7.3 files.")
 
 def extract_eeg_from_mat(mat_data: Dict, channel_name: Optional[str] = None) -> Tuple[np.ndarray, float]:
     """Extract EEG data and sampling rate from loaded .mat structure.
