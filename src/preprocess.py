@@ -168,3 +168,71 @@ def apply_mask(signal: np.ndarray, mask: np.ndarray) -> np.ndarray:
     out = signal.copy()
     out[~mask] = 0.0
     return out
+
+
+def preprocess(signal: np.ndarray, fs: int, 
+               bandpass_range: tuple = (0.5, 100),
+               notch_freq: int = 50) -> np.ndarray:
+    """
+    Complete preprocessing pipeline for iEEG data.
+    
+    Applies bandpass filtering and notch filtering to remove line noise.
+    
+    Parameters
+    ----------
+    signal : np.ndarray
+        Raw iEEG signal
+    fs : int
+        Sampling rate in Hz
+    bandpass_range : tuple
+        (low_freq, high_freq) for bandpass filter
+    notch_freq : int
+        Frequency to notch filter (e.g., 50 or 60 Hz)
+    
+    Returns
+    -------
+    np.ndarray
+        Preprocessed signal
+    """
+    # Apply bandpass filter
+    signal_bp = bandpass(signal, fs, bandpass_range[0], bandpass_range[1])
+    
+    # Apply notch filter to remove line noise
+    signal_clean = notch_filter(signal_bp, fs, notch_freq)
+    
+    return signal_clean
+
+
+def extract_nrem_epochs(signal: np.ndarray, fs: int,
+                        sleep_stages: np.ndarray = None) -> np.ndarray:
+    """
+    Extract NREM sleep epochs from continuous recording.
+    
+    For this simplified implementation, if sleep staging is not available,
+    we return the full signal. In a complete implementation, this would
+    filter for N2/N3 sleep stages only.
+    
+    Parameters
+    ----------
+    signal : np.ndarray
+        Preprocessed iEEG signal
+    fs : int  
+        Sampling rate in Hz
+    sleep_stages : np.ndarray, optional
+        Sleep stage annotations (if available)
+    
+    Returns
+    -------
+    np.ndarray
+        Signal segments during NREM sleep
+    """
+    if sleep_stages is None:
+        # No sleep staging available - return full signal
+        # In practice, you would manually annotate or use automated staging
+        return signal
+    
+    # Extract N2/N3 epochs (stages 2 and 3)
+    nrem_mask = np.isin(sleep_stages, [2, 3])
+    nrem_signal = signal[nrem_mask]
+    
+    return nrem_signal
