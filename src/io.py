@@ -93,14 +93,30 @@ def extract_eeg_from_mat(mat_data: Dict, channel_name: Optional[str] = None) -> 
     sfreq = None
     
     # Common field names in the dataset
-    data_keys = ['data', 'lfp', 'eeg', 'signal', 'lfpdata']
-    srate_keys = ['fs', 'srate', 'sampling_rate', 'fsample', 'Fs']
+    data_keys = ['data', 'lfp', 'eeg', 'signal', 'lfpdata', 'trial']    srate_keys = ['fs', 'srate', 'sampling_rate', 'fsample', 'Fs']
     
     # Try to find EEG data
     for key in data_keys:
         if key in mat_data:
             eeg_data = np.array(mat_data[key])
             break
+                
+    # Special handling for FieldTrip 'trial' format (h5py references)
+    if eeg_data is not None and 'trial' in mat_data:
+        # FieldTrip stores trials as h5py references
+        try:
+            import h5py
+            # Check if we got an h5py reference/group instead of actual data
+            if isinstance(eeg_data, (h5py.Reference, h5py.Group, h5py.Dataset)):
+                # Need to reopen file and extract trial data
+                logger.warning("Field Trip 'trial' format detected but contains h5py references. Skipping for now.")
+                eeg_data = None
+            elif hasattr(eeg_data, 'shape') and len(eeg_data.shape) == 2 and eeg_data.shape[0] == 1:
+                # If it's a 1xN array of references, we can't easily extract without file handle
+                logger.warning("FieldTrip trial data appears to be references. Skipping.")
+                eeg_data = None
+        except ImportError:
+            pass
     
     # Try to find sampling rate
     for key in srate_keys:
