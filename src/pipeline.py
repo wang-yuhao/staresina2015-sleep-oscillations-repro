@@ -15,7 +15,7 @@ from typing import Dict, List, Optional
 
 import yaml
 import numpy as np
-import mne
+# mne is not used directly in pipeline.py (only in io.py when loading EDF files)
 
 from .io import load_eeg, load_supplement, load_spindle_events, load_ripple_events, get_clean_nrem_mask, list_subjects
 from .preprocess import preprocess, extract_nrem_epochs
