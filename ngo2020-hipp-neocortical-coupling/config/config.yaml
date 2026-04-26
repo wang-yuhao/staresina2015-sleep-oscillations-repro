@@ -6,113 +6,96 @@
 
 # --- Data paths ---
 paths:
-  raw_data: "data/raw"              # Directory containing subject .mat files
-  processed_data: "data/processed"  # Preprocessed outputs
-  detections: "data/processed/detections"  # Spindle & ripple event files
-  results: "results"                # Figures and statistics
-  figures: "results/figures"
-  stats: "results/stats"
+  raw_data: "data/raw"                          # Downloaded OSF data
+  processed_data: "data/processed"              # Organized & validated data
+  detections: "data/processed/detections"       # Spindle & ripple event files  
+  results: "results"                            # Analysis outputs
+  figures: "results/figures"                    # Generated figures
+  stats: "results/stats"                        # Statistical test results
 
 # --- Dataset info ---
 dataset:
-  n_subjects: 14                   # 14 pre-surgical epilepsy patients
+  n_subjects: 14                                # 14 pre-surgical epilepsy patients
+  patient_ids: ["pat01", "pat02", "pat03", "pat04", "pat05", "pat06", "pat07",
+                "pat08", "pat09", "pat10", "pat11", "pat12", "pat13", "pat14"]
   osf_doi: "10.17605/OSF.IO/3HPVR"
   osf_url: "https://osf.io/3hpvr/"
   original_code_url: "https://github.com/episodicmemorylab/Ngo_et_al_eLife2020"
 
+# --- Data structure (actual OSF organization) ---
+data_folders:
+  eegs: "EEGs"                                  # Raw EEG recordings
+  ripples: "Ripples"                            # Detected ripple events
+  spindles: "Spindles"                          # Detected spindle events
+  control_events: "ControlEvents/ngo_et_al_eLife2020_controlData_100sets"
+
 # --- Recording parameters ---
 recording:
-  srate: 1000                      # Sampling rate in Hz (verify after loading)
-  nc_channel: "Cz"                 # Neocortex: scalp electrode Cz
-  hipp_channel: "HIPP"             # Hippocampus: posterior intracranial electrode
-  sleep_stage: "NREM"              # Analyze NREM sleep only
+  srate: 1000                                   # Sampling rate in Hz (verify after loading)
+  nc_channel: "Cz"                              # Neocortex: scalp electrode Cz
+  hipp_channel: "HIPP"                          # Hippocampus: posterior intracranial electrode
+  sleep_stage: "NREM"                           # Analyze NREM sleep only
 
-# --- Spindle detection (Staresina et al. 2015 / Ngo et al. 2020) ---
-spindle_detection:
-  bandpass_low: 12                 # Hz - spindle band low cutoff
-  bandpass_high: 16                # Hz - spindle band high cutoff
-  rms_window_ms: 200               # ms - RMS window length
-  rms_smooth_ms: 200               # ms - smoothing window length
-  threshold_low_sd: 2.5            # SD above mean (detection threshold)
-  threshold_high_sd: 9.0           # SD above mean (upper limit / artifact)
-  min_duration_ms: 500             # ms - minimum spindle duration
-  max_duration_ms: 3000            # ms - maximum spindle duration
-  channels: ["NC", "HIPP"]         # Detect spindles in both channels
+# --- Detection parameters (from paper methods) ---
+detection:
+  # Spindle detection (automated algorithm)
+  spindle:
+    bandpass_low: 12                            # Hz - spindle band low cutoff
+    bandpass_high: 15                           # Hz - spindle band high cutoff
+    min_duration: 0.5                           # seconds
+    max_duration: 3.0                           # seconds
+    threshold_sd: 2.0                           # Standard deviations above mean
 
-# --- Ripple detection (Staresina et al. 2015 / Ngo et al. 2020) ---
-ripple_detection:
-  bandpass_low: 80                 # Hz - ripple band low cutoff
-  bandpass_high: 100               # Hz - ripple band high cutoff
-  rms_window_ms: 20                # ms - RMS window for ripple detection
-  threshold_sd: 5.0                # SD above mean
-  min_duration_ms: 38              # ms - 3 cycles at 80 Hz minimum
-  max_duration_ms: 500             # ms - maximum ripple duration
-  min_cycles: 3                    # Minimum number of cycles in raw signal
-  epoch_window_s: 1.0              # Seconds each side for epoching (2s total)
-  channel: "HIPP"                  # Only detect in hippocampus
+  # Ripple detection (80-100 Hz)
+  ripple:
+    bandpass_low: 80                            # Hz - ripple band low cutoff
+    bandpass_high: 100                          # Hz - ripple band high cutoff
+    min_duration: 0.02                          # seconds (20 ms)
+    max_duration: 0.5                           # seconds
+    threshold_sd: 3.0                           # Standard deviations above mean
+    
+    # Key analysis: long vs short ripples
+    duration_threshold: 0.07                    # seconds (70 ms) - paper threshold
 
-# --- Control event matching ---
-control_events:
-  # Ripple-free intervals matched to ripple events for normalization
-  min_distance_from_ripple_s: 2.0  # Minimum distance from any ripple (seconds)
-  n_matched_per_ripple: 3          # Number of control events per ripple
-
-# --- Time-frequency representation (TFR) ---
+# --- Time-frequency analysis ---
 tfr:
-  method: "morlet"                 # Wavelet method
-  freqs_low: 4                     # Hz - lowest frequency
-  freqs_high: 30                   # Hz - highest frequency
-  n_freqs: 27                      # Number of frequency bins
-  n_cycles: 5                      # Morlet wavelet cycles (or freq-dependent)
-  baseline_window: [-1.0, -0.5]    # Seconds: baseline normalization window
-  epoch_tmin: -1.0                 # Epoch start relative to ripple peak (s)
-  epoch_tmax: 1.0                  # Epoch end relative to ripple peak (s)
-  decim: 1                         # Decimation factor (1 = no decimation)
+  method: "morlet"                              # Wavelet method
+  freqs_min: 1                                  # Hz
+  freqs_max: 200                                # Hz
+  n_freqs: 50                                   # Number of frequency bins
+  n_cycles: 7                                   # Wavelet cycles
+  time_window: [-1, 1]                          # seconds around ripple peak
 
-# --- Coherence analysis ---
-coherence:
-  method: "coh"                    # Magnitude-squared coherence
-  fmin: 10                         # Hz - min frequency for coherence
-  fmax: 20                         # Hz - max frequency for coherence
-  spindle_band: [12, 16]           # Hz - spindle band for reporting
-  n_cycles: 5                      # Cycles for spectral estimation
-  epoch_tmin: -1.0
-  epoch_tmax: 1.0
+# --- Coupling analysis ---
+coupling:
+  # Spindle band for coupling (12-15 Hz)
+  spindle_band: [12, 15]                        
+  
+  # Coherence analysis window
+  coherence_window: [-0.5, 0.5]                 # seconds around ripple peak
+  coherence_freqs: [1, 40]                      # Hz range
+  
+  # Partial Directed Coherence (PDC) - directionality
+  pdc_order: 10                                 # Model order for VAR
+  pdc_window: [-0.2, 0.2]                       # seconds around ripple peak
 
-# --- Partial Directed Coherence (PDC) ---
-pdc:
-  model_order: 10                  # MVAR model order
-  n_bootstrap: 1000                # Bootstrap iterations for significance
-  # Reduce to 200 for faster (less accurate) results
-  alpha: 0.05                      # Significance level
-  spindle_band: [12, 16]           # Hz
-  direction_nc_to_hipp: true       # Compute NC -> HIPP
-  direction_hipp_to_nc: true       # Compute HIPP -> NC
+# --- Statistical testing ---
+stats:
+  n_control_sets: 100                           # Number of shuffled control datasets
+  alpha: 0.05                                   # Significance level
+  correction: "fdr_bh"                          # False discovery rate (Benjamini-Hochberg)
+  n_permutations: 1000                          # For permutation tests
 
-# --- Ripple duration analysis ---
-ripple_duration:
-  split_method: "median"           # Median split into long/short groups
-  # Alternative: use specific percentiles
-  short_percentile: 50             # Below median = short
-  long_percentile: 50              # Above median = long
-  stat_test: "ttest_ind"           # One-sided independent t-test
-  stat_direction: "greater"        # Long > short (one-sided)
-
-# --- Cluster-based permutation statistics ---
-cluster_stats:
-  n_permutations: 1000
-  alpha: 0.05
-  tail: 0                          # Two-tailed
-  seed: 42                         # Random seed for reproducibility
-
-# --- Plotting ---
+# --- Visualization ---
 plotting:
-  dpi: 300
-  figure_format: "png"             # png or pdf
-  colormap_tfr: "RdBu_r"          # Diverging colormap for TFR
-  colormap_coherence: "viridis"
-  font_size: 12
-  spindle_color: "#2196F3"         # Blue for spindle band
-  ripple_color: "#F44336"          # Red for ripple
-  nc_color: "#4CAF50"              # Green for neocortex
-  hipp_color: "#FF9800"            # Orange for hippocampus
+  dpi: 300                                      # Figure resolution
+  format: "png"                                 # Output format
+  style: "seaborn-v0_8-paper"                   # Matplotlib style
+  figure_size: [8, 6]                           # inches (width, height)
+  
+  # Color schemes
+  colors:
+    long_ripples: "#E74C3C"                     # Red
+    short_ripples: "#3498DB"                    # Blue
+    hipp: "#2ECC71"                             # Green
+    nc: "#9B59B6"                               # Purple
